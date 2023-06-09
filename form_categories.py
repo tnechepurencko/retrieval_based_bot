@@ -39,21 +39,20 @@ print(pairwise_similarity.toarray())
 #                 indices[i] = []
 #             indices[i].append(j)
 arr = pairwise_similarity.toarray()
-np.fill_diagonal(arr, np.nan)
+# np.fill_diagonal(arr, np.nan)
 
 w = np.where(arr > 0.5)
 print(len(w[0]), len(w[1]))
 print(w)
 
 categories = dict()
-current = -1
 for i in range(len(w[0])):
     if w[0][i] < w[1][i]:
-        if w[0][i] == current:
-            pass
-        else:
-            current = w[0][i]
-            categories[len(categories)] = []
+        if w[0][i] not in categories.keys():
+            categories[w[0][i]] = []
+        categories[w[0][i]].append(corpus[w[1][i]])
+
+print(categories)
 
 
 
