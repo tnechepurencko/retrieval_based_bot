@@ -25,6 +25,7 @@
     ```
     pip install -r requirements.txt
     ```
+4. Install the embeddings file from [here](https://drive.google.com/file/d/1pNuUrR6mdsnYx-vQOKqc-H7QXFG0SZjm/view?usp=sharing)
 
 Now you can import the module model from another file, initialize an object from the Model() class, pass the question to get_top_ans() function along with the number of answers you want it to return.
 
