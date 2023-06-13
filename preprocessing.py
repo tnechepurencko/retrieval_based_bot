@@ -1,13 +1,3 @@
-import nltk
-from nltk.stem import WordNetLemmatizer
-import json
-import tensorflow
-import pickle
-import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.optimizers import SGD
-import random
 import pandas as pd
 import string
 import re
@@ -36,7 +26,8 @@ def remove_hello_words(words, phrase):
                     new_answer += x
         else:
             for x in sentences:
-                if not (words.split(' ')[0] in x.lower() and words.split(' ')[1] in x.lower() and len(x.split(' ')) < 4):
+                if not (words.split(' ')[0] in x.lower() and words.split(' ')[1] in x.lower() and len(
+                        x.split(' ')) < 4):
                     new_answer += x
 
         while new_answer[0] == ' ':

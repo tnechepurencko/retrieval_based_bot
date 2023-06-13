@@ -15,32 +15,29 @@ import string
 nltk.download('punkt')
 nltk.download('wordnet')
 
-# train data preprocessing
-# dft = pd.read_csv('data/train/Bitext_Sample_Customer_Service_Training_Dataset.csv')
-# train_data = dft.drop(columns=['entity_type', 'entity_value', 'start_offset', 'end_offset', 'category', 'tags'])
-# train_data = train_data.rename({'utterance': 'patterns', 'intent': 'tag'}, axis=1)
-#
-# tags = train_data.tag.unique()
-# answers = {}
-# for idx, val in enumerate(tags):
-#     answers[val] = idx
+
+def form_answers(df):
+    tags = df.answer.unique()
+    answers = {}
+    for idx, val in enumerate(tags):
+        # answers[val] = idx
+        b = val.encode('utf-8')
+        answers[val] = int.from_bytes(b, 'little')
+    return answers
+
 
 # train data preprocessing
-dft = pd.read_csv('formatted_msgs.csv', sep='\t')
-
-tags = dft.answer.unique()
-answers = {}
-for idx, val in enumerate(tags):
-    # answers[val] = idx
-    b = val.encode('utf-8')
-    answers[val] = int.from_bytes(b, 'little')
+df = pd.read_csv('formatted_msgs.csv', sep='\t')
+answers = form_answers(df)
 print('answers:', len(answers))
 
-df_elements = dft.sample(n=1000)
-train_data, test_data = train_test_split(df_elements, test_size=0.2)
-test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
-# print(train_data.iloc[1]['question'])
-# print(train_data.iloc[1]['answer'])
+test_data = pd.read_csv('test_msgs.csv', sep='\t')
+train_data = pd.read_csv('train_msgs.csv', sep='\t')
+
+# df_elements = df.sample(n=1000)
+# train_data, test_data = train_test_split(df_elements, test_size=0.2)
+# test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
+
 train_data = train_data.replace({"answer": answers})
 test_data = test_data.replace({"answer": answers})
 
@@ -53,8 +50,8 @@ documents = []
 ignore_words = ['?', '!']
 
 for key in answers.keys():
-    df = train_data.loc[train_data['answer'] == key]
-    phrases = df['question'].tolist()
+    dfk = train_data.loc[train_data['answer'] == key]
+    phrases = dfk['question'].tolist()
 
     for phrase in phrases:
         w = nltk.word_tokenize(phrase)

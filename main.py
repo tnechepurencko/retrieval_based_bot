@@ -1,6 +1,8 @@
 import logging
 from os import getenv
 from sys import exit
+import string
+import pymorphy2
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -12,7 +14,9 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 import pickle
 from keras.models import load_model
-from test_model import predict_class
+
+from model import Model
+# from test_model import predict_class
 
 bot_token = getenv("BOT_TOKEN")
 if not bot_token:
@@ -24,24 +28,60 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 logging.basicConfig(level=logging.INFO)
 
-lemmatizer = WordNetLemmatizer()
+morph = pymorphy2.MorphAnalyzer()
 
-model = load_model('chatbot_model.h5')
+model = Model()
+# model = load_model('chatbot_model.h5')
 words = pickle.load(open('words.pkl', 'rb'))
 classes = pickle.load(open('classes.pkl', 'rb'))
+
+stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
+                'у меня', 'по факту']
+stop_words = {'здравствуйте', 'почему', 'уже', 'я', 'есть', 'тут', 'а', 'и', 'нигде', 'снова', 'как', 'мой', 'но',
+              'этой', 'в', 'хорошо', 'понял', 'поняла', 'пожалуйста', 'от', 'с', 'подскажите', 'так', 'спасибо'}
+
+
+def remove_stop_phrases(phrase, stops):
+    for w in stops:
+        if w in phrase:
+            phrase = phrase.replace(w, '')
+    return phrase
+
+
+def preprocess_msg(msg):
+    msg = msg.translate(str.maketrans('', '', string.punctuation)).lower()
+    msg = remove_stop_phrases(msg, stop_phrases)
+    query = msg.split()
+
+    for i in range(len(query)):
+        query[i] = morph.parse(query[i])[0].normal_form
+    question = ' '.join(list(set(query) - stop_words))
+    return question
 
 
 @dp.message_handler()
 async def processing(message: types.Message):
     print(message)
-    ints = predict_class(message.text, model)
-    if len(ints) == 0:
-        print('\tcannot predict')
-        print('\tquerry:', message.text)
-        await message.answer('cannot predict')
-    else:
-        tag = ints[0]['intent']
-        await message.answer(tag)
+    question = preprocess_msg(message.text)
+    try:
+        q, a = model.get_top_ans([question])
+        answer = 'most relevant answer: ' + a + '\n\n' + 'other:\n'
+        for i in range(1, len(a)):
+            answer += str(i) + ') ' + a[i] + '\n'
+        await message.answer(answer)
+
+    except Exception as e:
+        await message.answer(str(e))
+
+
+    # ints = predict_class(question, model)
+    # if len(ints) == 0:
+    #     print('\tcannot predict')
+    #     print('\tquerry:', question)
+    #     await message.answer('cannot predict')
+    # else:
+    #     tag = ints[0]['intent']
+    #     await message.answer(tag)
 
 
 if __name__ == '__main__':

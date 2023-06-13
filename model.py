@@ -49,19 +49,21 @@ class Model:
 
 
 # For testing
-model = Model()
-test_data = pd.read_csv('test_msgs.csv', sep='\t')
-for idx, row in test_data.iterrows():
-    question = row['question']
-    try:
-        q, a = model.get_top_ans(question)
-        print(row['original'])
-        print(q)
-        print(a, '\n')
-    except Exception as e:
-        print(row['original'])
-        print('ERROR')
-        print(e, '\n')
+if '__main__' == __name__:
+    model = Model()
+    test_data = pd.read_csv('test_msgs.csv', sep='\t')
+    for idx, row in test_data.iterrows():
+        question = row['question']
+        try:
+            q, a = model.get_top_ans([question])
+            print(row['original'])
+            print(q)
+            print(a, '\n')
+        except Exception as e:
+            print(row['original'])
+            print(question)
+            print('ERROR')
+            print(e, '\n')
 
 
 
