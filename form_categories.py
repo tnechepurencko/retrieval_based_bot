@@ -22,7 +22,7 @@ for idx, val in enumerate(tags):
 print('len of answers:', len(answers))
 
 corpus = list(answers.keys())
-print(corpus)
+# print(corpus)
 
 vect = TfidfVectorizer(min_df=1, stop_words="english")
 tfidf = vect.fit_transform(corpus)
@@ -42,19 +42,35 @@ arr = pairwise_similarity.toarray()
 # np.fill_diagonal(arr, np.nan)
 
 w = np.where(arr > 0.5)
-print(len(w[0]), len(w[1]))
 print(w)
 
 categories = dict()
 for i in range(len(w[0])):
-    if w[0][i] < w[1][i]:
-        if w[0][i] not in categories.keys():
-            categories[w[0][i]] = []
-        categories[w[0][i]].append(corpus[w[1][i]])
+    in_cat = False
+    for k in categories.keys():
+        if w[1][i] in categories[k]:
+            in_cat = True
+            break
+    if not in_cat:
+        in_cat = -1
+        for k in categories.keys():
+            if w[0][i] in categories[k]:
+                in_cat = k
+                break
+        if in_cat != -1:
+            categories[in_cat].append(w[1][i])
+        else:
+            if w[0][i] not in categories.keys():
+                categories[w[0][i]] = []
+            categories[w[0][i]].append(w[1][i])
 
 print(categories)
+print('num of cats:', len(categories))
 
+# check uniqueness
 
+num_of_elems = 0
+for k in categories.keys():
+    num_of_elems += len(categories[k])
 
-
-
+print('num of elems:', num_of_elems)
