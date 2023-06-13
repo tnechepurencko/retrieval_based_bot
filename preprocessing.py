@@ -47,6 +47,13 @@ def remove_hello_words(words, phrase):
         return phrase
 
 
+def make_one_line(phrase):
+    answer = phrase.replace('\t', ' ')
+    answer = answer.replace('\n', ' ')
+    answer = answer.replace('\r', ' ')
+    return ''.join(answer.split(' '))
+
+
 def answer_preprocessing(phrase):
     answer = ''
     insert = True
@@ -59,30 +66,46 @@ def answer_preprocessing(phrase):
         elif s == '>':
             insert = True
 
-    answer = answer.replace('\t', ' ')
-    answer = answer.replace('\n', ' ')
-    answer = answer.replace('\r', ' ')
-    answer = remove_hello_words('здравствуйте', answer)
-    answer = remove_hello_words('добрый день', answer)
-    answer = remove_hello_words('добрый вечер', answer)
-    answer = remove_hello_words('доброе утро', answer)
+    answer = make_one_line(answer)
+    for w in ['здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро']:
+        answer = remove_hello_words(w, answer)
+
     return answer
 
 
-# train data preprocessing
-df = pd.read_csv('support_messages.csv')
+def initial_preprocessing():
+    df = pd.read_csv('support_messages.csv')
+    for p in ['Мы получили Ваше сообщение!', 'Оцените работу поддержки.', 'Мы всё еще можем Вам помочь?']:
+        df = df.drop(df[df['text'].str.contains(p)].index)
 
-df = df.drop(df[df['text'].str.contains('Мы получили Ваше сообщение!')].index)
-df = df.drop(df[df['text'].str.contains('Оцените работу поддержки.')].index)
-df = df.drop(df[df['text'].str.contains('Мы всё еще можем Вам помочь?')].index)
+    helper = df[df['text'].str.split().str.len().lt(3)]
+    helper = helper[helper['text'].str.contains('@')]
+    helper = helper[helper['messageFrom'].str.contains('CLIENT')]
+    df = df.drop(df[df['text'].str.split().str.len().lt(3)].index)
 
-helper = df[df['text'].str.split().str.len().lt(3)]
-helper = helper[helper['text'].str.contains('@')]
-helper = helper[helper['messageFrom'].str.contains('CLIENT')]
-df = df.drop(df[df['text'].str.split().str.len().lt(3)].index)
+    df = pd.concat([df, helper], ignore_index=True)
+    return df
 
-df = pd.concat([df, helper], ignore_index=True)
 
+def remove_stop_phrases(phrase, stops):
+    for w in stops:
+        if w in phrase:
+            phrase = phrase.replace(w, '')
+    return phrase
+
+
+def process_query(query, row, stops):
+    orig = ' '.join(query)
+
+    for i in range(len(query)):
+        query[i] = morph.parse(query[i])[0].normal_form
+
+    question = ' '.join(list(set(query) - stops))
+    answer = answer_preprocessing(row['text'])
+    return [orig, question, answer]
+
+
+df = initial_preprocessing()
 data = {'original': [], 'question': [], 'answer': []}
 new_df = pd.DataFrame(data)
 
@@ -98,28 +121,18 @@ for x in df['usedeskChatId'].unique():
     query = []
     for idx, row in df_usr.sort_values('createdDate').iterrows():
         if len(query) > 0 and row['messageFrom'] == 'OPERATOR':
-            orig = ' '.join(query)
-
-            for i in range(len(query)):
-                query[i] = morph.parse(query[i])[0].normal_form
-
-            question = ' '.join(list(set(query) - stop_words))
-            answer = answer_preprocessing(row['text'])
-
-            new_df.loc[len(new_df)] = [orig, question, answer]
+            new_df.loc[len(new_df)] = process_query(query, row, stop_words)
             query = []
         elif row['messageFrom'] == 'OPERATOR':
             continue
         else:
             msg = row['text'].translate(str.maketrans('', '', string.punctuation)).lower()
-            for w in stop_phrases:
-                if w in msg:
-                    msg = msg.replace(w, '')
+            msg = remove_stop_phrases(msg, stop_phrases)
             query.extend(msg.split())
 
 new_df.to_csv('formatted_msgs.csv', sep='\t', encoding='utf-8', index=False)
 
-df_elements = new_df.sample(n=1000)
+# new_df = new_df.sample(n=1000)
 train_data, test_data = train_test_split(new_df, test_size=0.2)
 train_data.to_csv('train_msgs.csv', sep='\t', encoding='utf-8', index=False)
 test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
