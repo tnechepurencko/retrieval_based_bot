@@ -16,7 +16,7 @@ class Model:
         self.data = pd.read_csv('train_msgs.csv', sep='\t')
 
     def load_embeds(self):
-        with open('Questions_embeddings_USE.json', 'r') as f:
+        with open('train_embeds.json', 'r') as f:
             embeds = json.load(f)
         return embeds
 
@@ -49,26 +49,23 @@ class Model:
 
 
 # For testing
-if '__main__' == __name__:
-    model = Model()
-    test_data = pd.read_csv('test_msgs.csv', sep='\t')
-    for idx, row in test_data.iterrows():
-        question = row['question']
-        try:
-            q, a = model.get_top_ans([question])
-            print(row['original'])
-            print(q)
-            print(a, '\n')
-        except Exception as e:
-            print(row['original'])
-            print(question)
-            print('ERROR')
-            print(e, '\n')
-
+model = Model()
+test_data = pd.read_csv('test_msgs.csv', sep='\t')
+for idx, row in test_data.iterrows():
+    question = row['question']
+    try:
+        q, a = model.get_top_ans([question])
+        print(row['original'])
+        print(q)
+        print(a, '\n')
+    except Exception as e:
+        print(row['original'])
+        print('ERROR')
+        print(e, '\n')
+        break
 
 
 # question = ['пополнение мир регистрироваться чек день пополнить почти время долгий получаться карта каждый происходить сбербанк этот не']
 # q, a = model.get_top_ans(question)
 # print(q)
 # print(a, '\n')
-
