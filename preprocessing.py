@@ -15,34 +15,8 @@ import pymorphy2
 from sklearn.model_selection import train_test_split
 
 
-def remove_one_hello_word(word, phrase):
-    if word in phrase.lower():
-        # print(answer)
-        separators = [m.start() for m in re.finditer('!', phrase)]
-        separators.extend([m.start() for m in re.finditer('\.', phrase)])
-        separators.append(-1)
-        separators.sort()
-        if separators[-1] != len(phrase) - 1:
-            separators.append(len(phrase) - 1)
-
-        sentences = []
-        for i in range(len(separators) - 1):
-            sentences.append(phrase[(separators[i] + 1):(separators[i + 1] + 1)])
-
-        new_answer = ''
-        for x in sentences:
-            if not (word in x.lower() and len(x.split(' ')) < 3):
-                new_answer += x
-        if new_answer[0] == ' ':
-            new_answer = new_answer[1:]
-        return new_answer
-    else:
-        return phrase
-
-
-def remove_two_hello_words(words, phrase):
+def remove_hello_words(words, phrase):
     if words in phrase.lower():
-        # print(answer)
         separators = [m.start() for m in re.finditer('!', phrase)]
         separators.extend([m.start() for m in re.finditer('\.', phrase)])
         separators.append(-1)
@@ -55,12 +29,20 @@ def remove_two_hello_words(words, phrase):
             sentences.append(phrase[(separators[i] + 1):(separators[i + 1] + 1)])
 
         new_answer = ''
-        for x in sentences:
-            if not (words.split(' ')[0] in x.lower() and words.split(' ')[1] in x.lower() and len(x.split(' ')) < 4):
-                new_answer += x
-        if new_answer[0] == ' ':
+
+        if len(words.split(' ')) == 1:
+            for x in sentences:
+                if not (words in x.lower() and len(x.split(' ')) < 3):
+                    new_answer += x
+        else:
+            for x in sentences:
+                if not (words.split(' ')[0] in x.lower() and words.split(' ')[1] in x.lower() and len(x.split(' ')) < 4):
+                    new_answer += x
+
+        while new_answer[0] == ' ':
             new_answer = new_answer[1:]
         return new_answer
+
     else:
         return phrase
 
@@ -80,10 +62,10 @@ def answer_preprocessing(phrase):
     answer = answer.replace('\t', ' ')
     answer = answer.replace('\n', ' ')
     answer = answer.replace('\r', ' ')
-    # answer = remove_one_hello_word('здравствуйте', answer)
-    # answer = remove_two_hello_words('добрый день', answer)
-    # answer = remove_two_hello_words('добрый вечер', answer)
-    # answer = remove_two_hello_words('доброе утро', answer)
+    answer = remove_hello_words('здравствуйте', answer)
+    answer = remove_hello_words('добрый день', answer)
+    answer = remove_hello_words('добрый вечер', answer)
+    answer = remove_hello_words('доброе утро', answer)
     return answer
 
 
