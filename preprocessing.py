@@ -12,6 +12,7 @@ import pandas as pd
 import string
 import re
 import pymorphy2
+from sklearn.model_selection import train_test_split
 
 
 def remove_one_hello_word(word, phrase):
@@ -79,10 +80,10 @@ def answer_preprocessing(phrase):
     answer = answer.replace('\t', ' ')
     answer = answer.replace('\n', ' ')
     answer = answer.replace('\r', ' ')
-    answer = remove_one_hello_word('здравствуйте', answer)
-    answer = remove_two_hello_words('добрый день', answer)
-    answer = remove_two_hello_words('добрый вечер', answer)
-    answer = remove_two_hello_words('доброе утро', answer)
+    # answer = remove_one_hello_word('здравствуйте', answer)
+    # answer = remove_two_hello_words('добрый день', answer)
+    # answer = remove_two_hello_words('добрый вечер', answer)
+    # answer = remove_two_hello_words('доброе утро', answer)
     return answer
 
 
@@ -100,7 +101,7 @@ df = df.drop(df[df['text'].str.split().str.len().lt(3)].index)
 
 df = pd.concat([df, helper], ignore_index=True)
 
-data = {'question': [], 'answer': []}
+data = {'original': [], 'question': [], 'answer': []}
 new_df = pd.DataFrame(data)
 
 # creating formatted db
@@ -115,13 +116,15 @@ for x in df['usedeskChatId'].unique():
     query = []
     for idx, row in df_usr.sort_values('createdDate').iterrows():
         if len(query) > 0 and row['messageFrom'] == 'OPERATOR':
+            orig = ' '.join(query)
+
             for i in range(len(query)):
                 query[i] = morph.parse(query[i])[0].normal_form
 
             question = ' '.join(list(set(query) - stop_words))
             answer = answer_preprocessing(row['text'])
 
-            new_df.loc[len(new_df)] = [question, answer]
+            new_df.loc[len(new_df)] = [orig, question, answer]
             query = []
         elif row['messageFrom'] == 'OPERATOR':
             continue
@@ -133,3 +136,8 @@ for x in df['usedeskChatId'].unique():
             query.extend(msg.split())
 
 new_df.to_csv('formatted_msgs.csv', sep='\t', encoding='utf-8', index=False)
+
+df_elements = new_df.sample(n=1000)
+train_data, test_data = train_test_split(new_df, test_size=0.2)
+train_data.to_csv('train_msgs.csv', sep='\t', encoding='utf-8', index=False)
+test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
