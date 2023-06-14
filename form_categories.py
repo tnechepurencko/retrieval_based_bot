@@ -29,17 +29,7 @@ tfidf = vect.fit_transform(corpus)
 pairwise_similarity = tfidf * tfidf.T
 print(pairwise_similarity.toarray())
 
-# indices = {}
-# for i in range(len(corpus)):
-#     if i % 500 == 0:
-#         print(i)
-#     for j in range(len(corpus)):
-#         if i < j and pairwise_similarity.toarray()[i][j] > 0.5:
-#             if i not in indices.keys():
-#                 indices[i] = []
-#             indices[i].append(j)
 arr = pairwise_similarity.toarray()
-# np.fill_diagonal(arr, np.nan)
 
 w = np.where(arr > 0.5)
 print(w)
@@ -74,3 +64,18 @@ for k in categories.keys():
     num_of_elems += len(categories[k])
 
 print('num of elems:', num_of_elems)
+
+
+def get_number(arr, db_len):
+    return np.argmin(arr.cumsum() < db_len / 100)
+
+
+lens = [len(x[1]) for x in list(categories.items())]
+print(sorted(lens, reverse=True))
+s_lst = list(categories.items())
+s_lst.sort(key=lambda x: len(x[1]), reverse=True)
+print(s_lst)
+new_lens = list(filter(lambda a: a > 4, lens))
+print(len(new_lens))
+print(sum(new_lens))
+

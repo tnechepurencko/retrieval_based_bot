@@ -65,23 +65,15 @@ async def processing(message: types.Message):
     question = preprocess_msg(message.text)
     try:
         q, a = model.get_top_ans([question])
-        answer = 'most relevant answer: ' + a + '\n\n' + 'other:\n'
+        top = 'most relevant answer: ' + a[0] + '\n' + 'other:\n'
         for i in range(1, len(a)):
-            answer += str(i) + ') ' + a[i] + '\n'
-        await message.answer(answer)
+            top += str(i) + ') ' + a[i] + '\n'
+        print(top, '\n\n')
+        await message.answer(a[0])
 
     except Exception as e:
+        print(e)
         await message.answer(str(e))
-
-
-    # ints = predict_class(question, model)
-    # if len(ints) == 0:
-    #     print('\tcannot predict')
-    #     print('\tquerry:', question)
-    #     await message.answer('cannot predict')
-    # else:
-    #     tag = ints[0]['intent']
-    #     await message.answer(tag)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,10 @@ import string
 import re
 import pymorphy2
 from sklearn.model_selection import train_test_split
+from russiannames import parser
+
+
+# print(parser.NamesParser().)
 
 
 def remove_hello_words(words, phrase):
@@ -42,7 +46,7 @@ def make_one_line(phrase):
     answer = phrase.replace('\t', ' ')
     answer = answer.replace('\n', ' ')
     answer = answer.replace('\r', ' ')
-    return ''.join(answer.split(' '))
+    return answer
 
 
 def answer_preprocessing(phrase):
@@ -58,10 +62,11 @@ def answer_preprocessing(phrase):
             insert = True
 
     answer = make_one_line(answer)
-    for w in ['здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро']:
-        answer = remove_hello_words(w, answer)
+    answer = remove_names(answer, unique_names)
+    # for w in ['здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро']:
+    #     answer = remove_hello_words(w, answer)
 
-    return answer
+    return ' '.join(answer.split(' '))
 
 
 def initial_preprocessing():
@@ -91,39 +96,70 @@ def process_query(query, row, stops):
     for i in range(len(query)):
         query[i] = morph.parse(query[i])[0].normal_form
 
-    question = ' '.join(list(set(query) - stops))
+    question = ' '.join([item for item in query if item not in stops])
     answer = answer_preprocessing(row['text'])
     return [orig, question, answer]
 
 
-df = initial_preprocessing()
-data = {'original': [], 'question': [], 'answer': []}
-new_df = pd.DataFrame(data)
+def remove_names(phrase, unique):
+    for p in string.punctuation:
+        if p in phrase:
+            phrase = phrase.replace(p, ' ' + p + ' ')
 
-# creating formatted db
-morph = pymorphy2.MorphAnalyzer()
-stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
-                'у меня', 'по факту']
-stop_words = {'здравствуйте', 'почему', 'уже', 'я', 'есть', 'тут', 'а', 'и', 'нигде', 'снова', 'как', 'мой', 'но',
-              'этой', 'в', 'хорошо', 'понял', 'поняла', 'пожалуйста', 'от', 'с', 'подскажите', 'так', 'спасибо'}
+    words = phrase.split(' ')
+    without_names = []
+    for w in words:
+        if w != '':
+            if w in string.punctuation and len(without_names) > 0:
+                if without_names[-1][-1] in string.punctuation:
+                    without_names[-1] = without_names[-1][:-1] + w
+                else:
+                    without_names[-1] += w
+            elif w not in string.punctuation and w.lower() not in unique:
+                without_names.append(w)
+    if len(without_names) > 0:
+        without_names[0] = without_names[0].title()
 
-for x in df['usedeskChatId'].unique():
-    df_usr = df.loc[df['usedeskChatId'] == x]
-    query = []
-    for idx, row in df_usr.sort_values('createdDate').iterrows():
-        if len(query) > 0 and row['messageFrom'] == 'OPERATOR':
-            new_df.loc[len(new_df)] = process_query(query, row, stop_words)
-            query = []
-        elif row['messageFrom'] == 'OPERATOR':
-            continue
-        else:
-            msg = row['text'].translate(str.maketrans('', '', string.punctuation)).lower()
-            msg = remove_stop_phrases(msg, stop_phrases)
-            query.extend(msg.split())
+    phrase = ' '.join(without_names)
+    if 'help@ scan. com. ru' in phrase:
+        phrase = phrase.replace('help@ scan. com. ru', 'help@scan.com.ru')
 
-new_df.to_csv('formatted_msgs.csv', sep='\t', encoding='utf-8', index=False)
+    return phrase
 
-# new_df = new_df.sample(n=1000)
-train_data, test_data = train_test_split(new_df, test_size=0.2)
-train_data.to_csv('train_msgs.csv', sep='\t', encoding='utf-8', index=False)
-test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
+
+if __name__ == '__main__':
+    df = initial_preprocessing()
+    names_df = pd.read_csv('ru_names.csv', sep='\t')
+    unique_names = names_df['text'].str.lower().unique()
+
+    data = {'original': [], 'question': [], 'answer': []}
+    new_df = pd.DataFrame(data)
+
+    # creating formatted db
+    morph = pymorphy2.MorphAnalyzer()
+    stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
+                    'у меня', 'по факту']
+    stop_words = {'здравствуйте', 'почему', 'уже', 'я', 'есть', 'тут', 'а', 'и', 'нигде', 'снова', 'мой', 'но',
+                  'этой', 'в', 'хорошо', 'понял', 'поняла', 'пожалуйста', 'от', 'с', 'подскажите', 'так', 'спасибо',
+                  'почемуто', 'почему-то', 'на', 'тогда', 'ли', 'день', 'вопрос'}
+
+    for x in df['usedeskChatId'].unique():
+        df_usr = df.loc[df['usedeskChatId'] == x]
+        query = []
+        for idx, row in df_usr.sort_values('createdDate').iterrows():
+            if len(query) > 0 and row['messageFrom'] == 'OPERATOR':
+                new_df.loc[len(new_df)] = process_query(query, row, stop_words)
+                query = []
+            elif row['messageFrom'] == 'OPERATOR':
+                continue
+            else:
+                msg = row['text'].translate(str.maketrans('', '', r"""!"#$%&'()*+,-./:;=?[\]^_`{|}~""")).lower()
+                msg = remove_stop_phrases(msg, stop_phrases)
+                query.extend(msg.split())
+
+    new_df.to_csv('formatted_msgs.csv', sep='\t', encoding='utf-8', index=False)
+
+    # new_df = new_df.sample(n=1000)
+    train_data, test_data = train_test_split(new_df, test_size=0.2)
+    train_data.to_csv('train_msgs.csv', sep='\t', encoding='utf-8', index=False)
+    test_data.to_csv('test_msgs.csv', sep='\t', encoding='utf-8', index=False)
