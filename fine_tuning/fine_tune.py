@@ -32,7 +32,7 @@ openai.api_key = api_key
 training_file = "train_msgs.jsonl"
 validation_file = "test_msgs.jsonl"
 
-prepare_jsonl(training_file[:-6], 0.01)
+prepare_jsonl(training_file[:-6], 0.01)  # take dataset with size of 1% of the original one
 prepare_jsonl(validation_file[:-6], 0.01)
 
 tr_file_id = upload_response_id('fine_tuning\\' + training_file)
