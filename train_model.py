@@ -27,12 +27,12 @@ def form_answers(df):
 
 
 # train data preprocessing
-df = pd.read_csv('formatted_msgs.csv', sep='\t')
+df = pd.read_csv('data/formatted_msgs.csv', sep='\t')
 answers = form_answers(df)
 print('answers:', len(answers))
 
-test_data = pd.read_csv('test_msgs.csv', sep='\t')
-train_data = pd.read_csv('train_msgs.csv', sep='\t')
+test_data = pd.read_csv('data/test_msgs.csv', sep='\t')
+train_data = pd.read_csv('data/train_msgs.csv', sep='\t')
 
 # df_elements = df.sample(n=1000)
 # train_data, test_data = train_test_split(df_elements, test_size=0.2)

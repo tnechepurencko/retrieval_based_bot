@@ -44,7 +44,7 @@ def predict_class(sentence, model):
 # test_data = dfd.drop(columns=['entity_type', 'entity_value', 'start_offset', 'end_offset', 'category', 'tags'])
 # test_data = test_data.rename({'utterance': 'patterns', 'intent': 'tag'}, axis=1)
 
-test_data = pd.read_csv('test_msgs.csv', sep='\t')
+test_data = pd.read_csv('data/test_msgs.csv', sep='\t')
 
 lemmatizer = WordNetLemmatizer()
 
