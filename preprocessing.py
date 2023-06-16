@@ -3,10 +3,6 @@ import string
 import re
 import pymorphy2
 from sklearn.model_selection import train_test_split
-from russiannames import parser
-
-
-# print(parser.NamesParser().)
 
 
 def remove_hello_words(words, phrase):
@@ -49,7 +45,7 @@ def make_one_line(phrase):
     return answer
 
 
-def answer_preprocessing(phrase):
+def remove_js_tags(phrase):
     answer = ''
     insert = True
     for s in phrase:
@@ -60,7 +56,11 @@ def answer_preprocessing(phrase):
                 insert = False
         elif s == '>':
             insert = True
+    return answer
 
+
+def answer_preprocessing(phrase):
+    answer = remove_js_tags(phrase)
     answer = make_one_line(answer)
     answer = remove_names(answer, unique_names)
     # for w in ['здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро']:
@@ -101,6 +101,25 @@ def process_query(query, row, stops):
     return [orig, question, answer]
 
 
+def remove_punctuation(phrase, signs=string.punctuation):
+    return phrase.translate(str.maketrans('', '', signs))
+
+
+def has_ids(phrase):
+    phrase = remove_punctuation(phrase)
+    return 'id' in phrase.lower().split(' ')
+
+
+def has_email(phrase):
+    return phrase.count('@') > 0 and phrase.count('@') > phrase.count('help@scan.com.ru')
+
+
+def has_phone_numbers(phrase):
+    all_numbers = re.findall('[0-9]+', remove_punctuation(phrase))
+    actual_numbers = list(filter(lambda n: len(n) > 9, all_numbers))
+    return len(actual_numbers) > 0 and len(actual_numbers) > actual_numbers.count('88002005303')
+
+
 def remove_names(phrase, unique):
     for p in string.punctuation:
         if p in phrase:
@@ -127,6 +146,12 @@ def remove_names(phrase, unique):
     return phrase
 
 
+stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
+                'у меня', 'по факту']
+stop_words = {'здравствуйте', 'почему', 'уже', 'я', 'есть', 'тут', 'а', 'и', 'нигде', 'снова', 'мой', 'но',
+              'этой', 'в', 'хорошо', 'понял', 'поняла', 'пожалуйста', 'от', 'с', 'подскажите', 'так', 'спасибо',
+              'почемуто', 'почему-то', 'на', 'тогда', 'ли', 'день', 'вопрос'}
+
 if __name__ == '__main__':
     df = initial_preprocessing()
     names_df = pd.read_csv('ru_names.csv', sep='\t')
@@ -137,23 +162,21 @@ if __name__ == '__main__':
 
     # creating formatted db
     morph = pymorphy2.MorphAnalyzer()
-    stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
-                    'у меня', 'по факту']
-    stop_words = {'здравствуйте', 'почему', 'уже', 'я', 'есть', 'тут', 'а', 'и', 'нигде', 'снова', 'мой', 'но',
-                  'этой', 'в', 'хорошо', 'понял', 'поняла', 'пожалуйста', 'от', 'с', 'подскажите', 'так', 'спасибо',
-                  'почемуто', 'почему-то', 'на', 'тогда', 'ли', 'день', 'вопрос'}
 
     for x in df['usedeskChatId'].unique():
         df_usr = df.loc[df['usedeskChatId'] == x]
         query = []
         for idx, row in df_usr.sort_values('createdDate').iterrows():
             if len(query) > 0 and row['messageFrom'] == 'OPERATOR':
-                new_df.loc[len(new_df)] = process_query(query, row, stop_words)
+                if not has_ids(row['text']) and not has_email(row['text']) and not has_phone_numbers(row['text']):
+                    orig, question, answer = process_query(query, row, stop_words)
+                    if answer != '':
+                        new_df.loc[len(new_df)] = orig, question, answer
                 query = []
             elif row['messageFrom'] == 'OPERATOR':
                 continue
             else:
-                msg = row['text'].translate(str.maketrans('', '', r"""!"#$%&'()*+,-./:;=?[\]^_`{|}~""")).lower()
+                msg = remove_punctuation(row['text'], r"""!"#$%&'()*+,-./;=?[\]^_`{|}~""").lower()
                 msg = remove_stop_phrases(msg, stop_phrases)
                 query.extend(msg.split())
 
