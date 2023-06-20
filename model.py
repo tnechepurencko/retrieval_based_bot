@@ -12,7 +12,8 @@ class Model:
         module_url = 'https://tfhub.dev/google/universal-sentence-encoder-multilingual/3'
         self.model = hub.load(module_url)
         self.embeds = self.load_embeds()
-        self.data = pd.read_csv('data/train_msgs.csv', sep='\t')
+        self.data = pd.read_csv('data/new_df.csv', sep='\t')
+        self.data = self.data.drop('original', axis=1)
 
     def load_embeds(self):
         with open('data/new_df_question.json', 'r') as f:
