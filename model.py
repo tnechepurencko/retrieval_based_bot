@@ -49,24 +49,26 @@ class Model:
 
 
 # For testing
+
+# if __name__ == '__main__':
+#     model = Model()
+#     test_data = pd.read_csv('data/test_msgs.csv', sep='\t')
+#     for idx, row in test_data.iterrows():
+#         question = row['question']
+#         try:
+#             q, a = model.get_top_ans([question])
+#             print(row['original'])
+#             print(q)
+#             print(a, '\n')
+#         except Exception as e:
+#             print(row['original'])
+#             print('ERROR')
+#             print(e, '\n')
+#             break
+
 if __name__ == '__main__':
     model = Model()
-    test_data = pd.read_csv('data/test_msgs.csv', sep='\t')
-    for idx, row in test_data.iterrows():
-        question = row['question']
-        try:
-            q, a = model.get_top_ans([question])
-            print(row['original'])
-            print(q)
-            print(a, '\n')
-        except Exception as e:
-            print(row['original'])
-            print('ERROR')
-            print(e, '\n')
-            break
-
-
-# question = ['пополнение мир регистрироваться чек день пополнить почти время долгий получаться карта каждый происходить сбербанк этот не']
-# q, a = model.get_top_ans(question)
-# print(q)
-# print(a, '\n')
+    question = ['забыть пароль']
+    q, a = model.get_top_ans(question)
+    print(q)
+    print(a, '\n')
