@@ -15,7 +15,7 @@ class Model:
         self.data = pd.read_csv('data/train_msgs.csv', sep='\t')
 
     def load_embeds(self):
-        with open('train_embeds.json', 'r') as f:
+        with open('data/new_df_question.json', 'r') as f:
             embeds = json.load(f)
         return embeds
 

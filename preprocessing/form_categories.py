@@ -1,16 +1,5 @@
-import nltk
-from nltk.stem import WordNetLemmatizer
-import json
-import tensorflow
-import pickle
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.optimizers import SGD
-import random
 import pandas as pd
-from sklearn.model_selection import train_test_split
-import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -46,6 +35,26 @@ def get_categories(pairwise_similarity, accuracy=0.5):
     return categories
 
 
+def reduce(df, answers, categories):
+    reduced_cats = list(filter(lambda x: len(x) < 5, list(categories.values())))  # remove them from db
+    print(reduced_cats)
+    print('len of reduced_cats:', len(reduced_cats))
+
+    s = set()
+    for x in reduced_cats:
+        s |= set(x)
+
+    print('set:', s)
+    print('len of set of reduced_cats:', len(s))
+
+    # lst = [answers[i] for i in s]
+    # print('lst:', lst)
+
+    df = df.drop(list(s))
+    # df = df.drop(df[df['answer'] in lst].index)
+    return df
+
+
 data = pd.read_csv('../data/formatted_msgs.csv', sep='\t')
 tags = data['answer'].tolist()
 print('original len of answers:', len(tags))
@@ -71,14 +80,13 @@ print('num of elems:', num_of_elems)
 # s_lst.sort(key=lambda x: len(x[1]), reverse=True)
 # print('s_lst:', s_lst)
 
-reduced_cats = list(filter(lambda x: len(x) < 5, list(cats.values())))  # remove them from db
-print(reduced_cats)
-print('len of reduced_cats:', len(reduced_cats))
+new_df = reduce(data, tags, cats)
+print('new_df.shape:', new_df.shape)
+new_df.to_csv('new_df.csv', sep='\t', encoding='utf-8', index=False)
 
-s = set()
-for x in reduced_cats:
-    s |= set(x)
-
-print('set:', s)
-print('len of set of reduced_cats:', len(s))
+# tags = new_df['answer'].tolist()
+#
+# arr = get_pairwise_similarity(tags)
+# cats = get_categories(arr)
+# print('new num of cats:', len(cats))
 

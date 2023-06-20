@@ -1,4 +1,5 @@
 import logging
+# import sklearn
 from os import getenv
 from sys import exit
 import string
@@ -10,10 +11,10 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
 from aiogram.utils.exceptions import BotBlocked
-import nltk
-from nltk.stem import WordNetLemmatizer
+# import nltk
+# from nltk.stem import WordNetLemmatizer
 import pickle
-from keras.models import load_model
+# from keras.models import load_model
 
 from model import Model
 # from test_model import predict_class
@@ -32,8 +33,8 @@ morph = pymorphy2.MorphAnalyzer()
 
 model = Model()
 # model = load_model('chatbot_model.h5')
-words = pickle.load(open('words.pkl', 'rb'))
-classes = pickle.load(open('classes.pkl', 'rb'))
+# words = pickle.load(open('words.pkl', 'rb'))
+# classes = pickle.load(open('classes.pkl', 'rb'))
 
 stop_phrases = ['по какой причине', 'добрый день', 'добрый вечер', 'доброе утро', 'к сожалению', 'в очередной раз',
                 'у меня', 'по факту']
@@ -65,14 +66,19 @@ async def processing(message: types.Message):
     question = preprocess_msg(message.text)
     try:
         q, a = model.get_top_ans([question])
-        top = 'most relevant answer: ' + a[0] + '\n' + 'other:\n'
-        for i in range(1, len(a)):
-            top += str(i) + ') ' + a[i] + '\n'
-        print(top, '\n\n')
+        # top = 'most relevant answer: ' + a[0] + '\n' + 'other:\n'
+        # for i in range(1, len(a)):
+        #     top += str(i) + ') ' + a[i] + '\n'
+
+        print(message.text)
+        print(q)
+        print(a, '\n')
         await message.answer(a[0])
 
     except Exception as e:
-        print(e)
+        print(message.text)
+        print('ERROR')
+        print(e, '\n')
         await message.answer(str(e))
 
 
